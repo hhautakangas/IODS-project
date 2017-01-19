@@ -1,0 +1,18 @@
+---
+title: "README"
+author: "Heidi Hautakangas"
+date: "1/19/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction to Open Data Science
+
+At first week, we are learning to use R, Rmarkdown and GitHub
+
+Link to my github repository:
+
+https://github.com/hhautakangas/IODS-project 
