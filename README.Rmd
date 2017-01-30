@@ -13,3 +13,7 @@ At first week, we are learning to use R, Rmarkdown and GitHub
 Link to my github repository:
 
 https://github.com/hhautakangas/IODS-project 
+
+and to my course diary:
+
+https://hhautakangas.github.io/IODS-project/

@@ -1,7 +1,95 @@
-# Insert chapter 2 title here
+---
+title: Week 2
+author: Heidi Hautakangas
+output: html_document
+---
 
-*Describe the work you have done this week and summarize your learning.*
+# ANALYSIS
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using  
+
+
+
+Dataset LEARN includes 166 observations and 7 variables. Variables are gender, Age, Attitude, Points, Deep, Stra and Surf, of which gender is a character string coded as F=female and M=male. Other variables are integers. Age is reported in years derived from the date of birth and mean age of the data is 26 years. Age interval is from 17 years to 55 years. Attitude measures global attitude towards statistics, and maximum points is 55 and minimum 14 points, mean scores being 31,43 and median 32. Points variable contains total exam points. The mean is 22,72 and the points varies between 7 to 33. Variables Deep, Surf and Stra are sumvariables which describe the type of approach in learning: either deep approach, or surface or strategic approach. Scale for these variables is from 1 to 5.
+
+
+
+
+```{r }
+# read data
+setwd("~/Documents/IODS-project")
+LEARN <- read.table("data/learning2014sub.txt", as.is=TRUE, header=TRUE)
+
+# attach the data so there is no need to refer to the dataset used
+attach(LEARN)
+# structure and dimension of the data
+dim(LEARN)
+str(LEARN)
+# summary of the data
+summary(LEARN)
+```
+
+
+
+
+Plot 1. contains boxplots, distributions and scatter plots between all variables classified by gender. Gender is not distributed evenly, there are almost twice as many female observations (n= 110) than male observations (n=56). Most of the scatterplots shows that there is very negligible correlation between variables. Exceptions are between variables Attitude and Points with correlation 0.437, and between Deep and Surf with negative correlation 0.324. From both density and box plots, it can be seen, that there is difference between answers of male and female groups. This can also be observed from the correlations: for example, between variables Deep and Surf, males has strong negative correlation (-0.622), whereas correlation in females is negligible (-0.087). All distributions of female observations has more than one peak, so it can be assumed that they are not normally distributed. Also for male, distributions of Attitude and Points has clearly several peaks. Age is positively skewed in both genders.
+
+
+```{r, echo = FALSE, warning=FALSE}
+library(ggplot2)
+library(GGally)
+```
+
+```{r}
+## plot with title added
+p <- ggpairs(LEARN, mapping = aes(col = gender, alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+LEARNp <- p + ggtitle("Plot 1. Learning 2014 data summary")
+LEARNp
+```
+
+
+
+# Linear regression
+
+
+
+At first, to model factors that could possibly explain success in exams, I fitted a regression model with the following three explanatory variables: Age, gender and Attitude, Points being a dependant variable. These results can be seen above (lm1). Only Attitude (p<8.34e-09) of the explanatory variables and regression intercept (p<8.34e-09) were statistically significant. 0.36 gain in the global attitude towards statistics increases exam points by one. Because there is no statistically significant relationship between Points and Age or between Points and gender, I removed them from the model and fitted a new one with only Attitude as an explanatory variable (lm2). Coefficient of Attitude remains almost the same: 0.35 (p<-4.12e-09) gain in the attitude increasing exam points by one. Attitude and Points scatter plot is presented in the Plot 2. 
+
+
+
+```{r}
+# linear regression
+# dependent variable Points
+# explanatory variables Age, gender and Attitude
+
+lm1 <- lm(Points ~ Age + gender + Attitude, data=LEARN)
+print(summary(lm1))
+
+# second model Attitude as an explanatory variable
+lm2 <- lm(Points ~ Attitude, data=LEARN)
+print(summary(lm2))
+```
+
+```{r}
+# scatter plot between Attitude and Points
+p2 <- qplot(Attitude, Points, data = LEARN) + geom_smooth(method = "lm")
+p3 <- p2 + ggtitle("Plot 2. Student's attitude vs. exam points")
+p3
+```
+
+
+
+
+T-test tests an effect of a given variable to the explanatory variable by testing if the variable differs from zero statistically significantly, and produces T-value that is used to estimate if this null hypothesis can be rejected or accepted. In regression analysis, F-test tests whether explanatory variables can be used to model the variation of the dependant variable. For both models, F-statistics was statistically significant: in the first model p-value was less than 5.54e-08, and in the second model p-value was under 4.1e-09. F-test and R^2 are used to test power of the test. R^2 is the coefficient of determination which describes the proportion of the variation of the dependant variable that can be explained by explanatory variables in the regression model. It varies between 0 and 1, small R^2 indicating that explanatory variables explains only small amount of the variation of the dependant variable and high R^2 vice versa. In the first model, R^2 was 0.20, whereas in the  second model it was 0.19. Adjusted R^2 considers also the amount of the explanatory variables and is used to compare the results of different regression models. Adjusted R^2 was 0.187 in the first model and 0.186 in the second model with only one explanatory variable.
+
+Residual standard error describes standard deviation of the residuals and affects to the power of the test. The higher deviation and thus residual standard error, the smaller is the power of the test. Both of the models has quite big residual standard errors, approximately 5.32.
+
+Linear regression assumes that the relationship between variables is linear. Errors are assumed to be normally distributed and not correlated. Homoskedasticity of the errors is also assumed, meaning that variance is constant and does not depend on the observation. Heteroskedasticity can be though handled, for example by weighting variables by the inverse of the variance. Leverage measures the amount of impact a single observation has on the model, and residuals vs leverage plot can be used to identify observations with unusually high impact.
+
+For model validation, I examined these assumptions by producing three plots from the second model (Plot 3.): Residuals vs Fitted, Normal QQ-plot and Residuals vs Leverage. QQ-plot shows that the normality assumption of the errors holds. Residuals vs Fitted plot is used to examine homoskedasticity. Observations are scattered and  do not show any systematic pattern, so the homoskedasticity assumption is also valid. Residuals vs Leverage shows that the leverage is regular and there is no observation with unusually high impact. Model is thus valid.
+
+```{r}
+## Plots for validation
+par(mfrow= c(2,2))
+plot(lm2, which=c(1:2,5))
+legend("top", legend = "Plot 3. Model validation")
+```
