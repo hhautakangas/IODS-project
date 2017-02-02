@@ -4,7 +4,8 @@ author: Heidi Hautakangas
 output: html_document
 ---
 
-# ANALYSIS
+# WEEK 2
+## ANALYSIS
 
 
 
@@ -48,7 +49,7 @@ LEARNp
 
 
 
-## Linear regression
+### Linear regression
 
 
 
@@ -85,11 +86,13 @@ Residual standard error describes standard deviation of the residuals and affect
 
 Linear regression assumes that the relationship between variables is linear. Errors are assumed to be normally distributed and not correlated. Homoskedasticity of the errors is also assumed, meaning that variance is constant and does not depend on the observation. Heteroskedasticity can be though handled, for example by weighting variables by the inverse of the variance. Leverage measures the amount of impact a single observation has on the model, and residuals vs leverage plot can be used to identify observations with unusually high impact.
 
-For model validation, I examined these assumptions by producing three plots from the second model (Plot 3.): Residuals vs Fitted, Normal QQ-plot and Residuals vs Leverage. QQ-plot shows that the normality assumption of the errors holds. Residuals vs Fitted plot is used to examine homoskedasticity. Observations are scattered and  do not show any systematic pattern, so the homoskedasticity assumption is also valid. Residuals vs Leverage shows that the leverage is regular and there is no observation with unusually high impact. Model is thus valid.
+For model validation, I examined these assumptions by producing three plots from the second model: Residuals vs Fitted, Normal QQ-plot and Residuals vs Leverage. Plot 3b. shows that the normality assumption of the errors holds. Plot 3a. is used to examine homoskedasticity. Observations are scattered and do not show any systematic pattern, so the homoskedasticity assumption is also valid. Plot 3c. shows that the leverage is regular and there is no observation with unusually high impact. Model is thus valid.
 
 ```{r}
 ## Plots for validation
 par(mfrow= c(2,2))
-plot(lm2, which=c(1:2,5))
-legend("top", legend = "Plot 3. Model validation")
+plot(lm2, which=c(1), main="Plot 3a. Model validation")
+plot(lm2, which=c(2), main="Plot 3b. Model valitadion")
+plot(lm2, which=c(5), main="Plot 3c. Model validation")
+
 ```
