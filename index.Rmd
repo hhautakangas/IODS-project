@@ -18,12 +18,12 @@ output:
 ```
   
 ***
-  
-```{r child = "chapter2.Rmd"}
-```
-
-***
 
 ```{r child = "Chapter2a.Rmd"}
 ```
+
+***  
+```{r child = "chapter2.Rmd"}
+```
+
 ***
