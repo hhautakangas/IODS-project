@@ -1,0 +1,176 @@
+---
+title: "Week 3"
+author: "Heidi Hautakangas"
+date: "2/5/2017"
+output: html_document
+---
+
+
+# WEEK 3
+## ANALYSIS
+
+### Data
+
+
+ALC data includes 35 variables with 385 observations. There are some background information, such as sex, age, address, family size and parent's job and education. Main interest is in the study habits and grades and factors that might affect the study success. Habits of alcohol use are also examined. There are three types of variables: 1. binary variables for example sex, relationship status and extra-curricular activities, 2. numeric variables for example age and number of absences and  3. nominal variables, for example parent's job.
+Age interval is from 15 to 22 and median age is 17.
+
+```{r echo=F}
+# results not printed
+setwd("~/Documents/IODS-project")
+# read data
+ALC <- read.table("data/alcohol.txt", as.is=T, header=T)
+attach(ALC)
+```
+```{r eval=F}
+# names and summary
+names(ALC)
+dim(ALC)
+str(ALC)
+summary(ALC)
+
+```
+
+
+### Hypotheses
+
+To study possible factors that might have relationship with high/low alcohol consumption, I chose following four variables: sex, absences, romantic and studytime. Sex and romantic are binary variables, and studytime and absences numeric variables. Hypotheses about their relationship between alcohol consumption are:
+
+Sex:
+H0: Sex does not affect on the alcohol consumption, 
+H1: Alcohol consumption differs between males and females
+
+Romantic:
+H0: Being in a romantic relationship does not affect on alcohol consumption, 
+H1: Being in a romantic relationship lessens the alcohol consumption
+
+Absences:
+H0: There is no relatioship between alcohol consumption and number of absences,  
+H1: Those whit higher alcohol consumption have more absences
+
+Studytime:
+H0: There is no relationship between studytime and alcohol consumption, 
+H1: Those who study more use less alcohol
+
+
+At start, these relationships are examined from graphics and tables. 
+```{r echo=F, warning=F, message=F}
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+# tables and plots
+# table 1
+ALC %>% group_by(high_use, sex) %>% summarise(count = n())
+## barplot SEX
+plot(factor(high_use)~factor(sex), xlab="Sex", ylab="high use of alcohol", main="Plot 1. Sex of the students")
+```
+
+
+Table 1. shows that in both sexes there are more of those with low alcohol comsumption, but the amount with high use in males is higher (72/184) than in females (42/198). This can be seen also in the plot 1. These findings support the alternative hypothesis that there is difference between males and females.
+
+```{r}
+# table 2
+ALC %>% group_by(high_use, romantic) %>% summarise(count = n()) 
+# barplot ROMANTIC
+plot(factor(high_use)~factor(romantic),xlab="in a relationship", ylab="high use of alcohol", main= "Plot 2.  Relationship and high alcohol use")
+
+```
+
+
+
+
+From plot 2 it can be seen that there is no difference between relationship  status  and high alcohol consumption. From the same plot and also from table it can be also seen that there are less people in a romantic relationship than those who are in a romantic relationship (261:121). These findings supports the null hypothesis. 
+
+```{r}
+# table 3
+ALC %>% group_by(high_use) %>% summarise(count = n(), mean_absences=mean(absences))
+# boxplot ABSENCES
+g2 <- ggplot(ALC, aes(y =absences, x=high_use))
+g2 + geom_boxplot() + ggtitle("Plot 3. Number of absences")
+```
+
+
+
+Table 3 shows the mean absences which seem to differ between high and low users, so that the ones who have high alcohol consumption have almost two times more absences compared to the ones with low alcohol consumption. This can be observed also from the plot 3. These support the alternative hypothese about high users having more absences.
+
+```{r}
+#table 4
+ALC %>% group_by(high_use) %>% summarise(count = n(), mean_weekly_study_time=mean(studytime))
+# barplot STUDYTIME 
+spineplot(factor(studytime)~factor(high_use), xlab="high use of alcohol", ylab="weekly study time", main="Plot 4. Weekly study time")
+```
+
+
+
+
+Table 4. shows that the ones with low alcohol consumption uses on average more hours to study per week than the ones with high consumption. Difference can be seen in the plot 4. This suggests that the null hypothesis could possibly be rejected. To confirm these findings, they need to be tested also statistically.
+
+ 
+### Logistic regression and odds ratios
+
+
+Because the responce variable high use is binary, these relationships can be best examined by logistic regression. From the summary of the fitted model (above), it can be seen that all other variables except romantic are statistically significant with p-value < 0.05. If stringent treshold is desired, are variables absences and sex statistically significant with p-value < 0.01. but studytime do not reach anymore acquired level. Studytime has negative coefficient and both absences and sex positive. Deviance is used to examine the goodness of fit of the model. When the model fits perfectly to the data, is the deviance zero. In a binomial model, there is overdispersion if the deviance is much higher than the degrees of freedom. Null deviance is 465.68 on 381 degrees of freedom which suggest that there is some overdispersion in the model. Odds ratio for absences is 1.09 with (1.05,1.45) confidence interval of 95%, which means that there is 1.09 higher risk to have high alcohol consumption when the number of absences are higher compared to the lower amount of absences. There is 2.2 higher risk for males to have high alcohol consumption than females with (1.35,3.62) confidence interval of 95%. Whereas weekly studytime has an opposite risk, those who study more has 0.67 lower risk to have high alcohol consumption with (0.49,0.91) 95%-confidence interval.These results support earlier observations from the plots and tables.
+
+```{r message=F}
+# logistic regression model with all variables
+m1 <- glm(high_use ~ absences + studytime + romantic + sex, data = ALC, family = "binomial")
+#  a summary of the model
+summary(m1)
+# coefficients of the model
+coef(m1)
+# compute odds ratios (OR)
+OR <- coef(m1) %>% exp
+# compute confidence intervals (CI)
+CI <-confint(m1) %>% exp
+# print out the odds ratios with their confidence intervals
+cbind(OR, CI)
+```
+
+
+
+### Predictive power, training error and cross-validation
+
+To compute predictive power of the model, statistically non-significant variable studytime is excluded from the model.
+
+
+```{r message=F}
+# model with only statistically significant variables
+m2 <- glm(high_use ~ absences + studytime  + sex, data = ALC, family = "binomial")
+summary(m2)
+# predict() the probability of high_use and add it in the data
+probabilities <- predict(m2, type = "response")
+ALC <- mutate(ALC, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+ALC <- mutate(ALC, prediction = probability > 0.5)
+# tabulate the target variable versus the predictions
+table(high_use = ALC$high_use, prediction = ALC$prediction)
+# tabulate the target variable versus the predictions
+table(high_use = ALC$high_use, prediction = ALC$prediction) %>% prop.table() %>% addmargins()
+
+## training error
+# define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+loss_func(class = ALC$high_use, prob = ALC$probability)
+
+# 10-fold cross-validation 
+library(boot)
+cv <- cv.glm(data = ALC, cost = loss_func, glmfit = m2, K = 10)
+# average number of wrong predictions in the cross validation
+cv$delta[1]
+
+```
+
+There were 0.67 probability (258/385) for both predicted and observed to be false and 0.07 probability (26/382) for both predicted and observed to be true. The probability to false positives were 0.026 (10/382) and 0.23 probability (88/382) for false negatives. Probabilities are presented in the plot 5.
+Training error of the model is 0.26 and by 10-fold cross-validation is the test error is approxomately 0.26 which happens to be same as in the DataCamp model.
+
+```{r}
+# Plot 5. Predictions
+g <- ggplot(ALC, aes(x = probability, y = high_use, col= prediction))
+g + geom_point()+ggtitle("Plot 5. Prediction vs true values probabilites")
+```
