@@ -37,19 +37,27 @@ summary(ALC)
 To study possible factors that might have relationship with high/low alcohol consumption, I chose following four variables: sex, absences, romantic and studytime. Sex and romantic are binary variables, and studytime and absences numeric variables. Hypotheses about their relationship between alcohol consumption are:
 
 Sex:
+
 H0: Sex does not affect on the alcohol consumption, 
+
 H1: Alcohol consumption differs between males and females
 
 Romantic:
-H0: Being in a romantic relationship does not affect on alcohol consumption, 
+
+H0: Being in a romantic relationship does not affect on alcohol consumption 
+
 H1: Being in a romantic relationship lessens the alcohol consumption
 
 Absences:
-H0: There is no relatioship between alcohol consumption and number of absences,  
+
+H0: There is no relatioship between alcohol consumption and number of absences  
+
 H1: Those whit higher alcohol consumption have more absences
 
 Studytime:
-H0: There is no relationship between studytime and alcohol consumption, 
+
+H0: There is no relationship between studytime and alcohol consumption 
+
 H1: Those who study more use less alcohol
 
 
@@ -167,7 +175,7 @@ cv$delta[1]
 ```
 
 There were 0.67 probability (258/385) for both predicted and observed to be false and 0.07 probability (26/382) for both predicted and observed to be true. The probability to false positives were 0.026 (10/382) and 0.23 probability (88/382) for false negatives. Probabilities are presented in the plot 5.
-Training error of the model is 0.26 and by 10-fold cross-validation is the test error is approxomately 0.26 which happens to be same as in the DataCamp model.
+Training error of the model is 0.26, and by 10-fold cross-validation, the test error is approximately 0.26 which happens to be same as in the DataCamp model.
 
 ```{r}
 # Plot 5. Predictions
