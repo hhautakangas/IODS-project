@@ -1,0 +1,213 @@
+---
+title: "week 4"
+author: "Heidi Hautakangas"
+date: "2/13/2017"
+output: html_document
+---
+
+
+```{r echo=F, warning=F, message=F}
+library(dplyr)
+library(ggplot2)
+library(MASS)
+library(GGally)
+library(tidyr)
+library(corrplot)
+```
+
+# WEEK 4
+## Analysis 
+
+### Boston Data
+
+
+
+Boston data set about housing values in suburbs of Boston has 14 variables and 506 observations, of which 12 are continuous numerical variables  and 2 discrete integers. It includes several variables of possible factors that might influence on housing values which are listed below. 
+
+-crim: per capita crime rate by town.
+
+-zn: proportion of residential land zoned for lots over 25,000 sq.ft.
+
+-indus: proportion of non-retail business acres per town.
+
+-chas: Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+
+-nox: nitrogen oxides concentration (parts per 10 million).
+
+-rm: average number of rooms per dwelling.
+
+-age: proportion of owner-occupied units built prior to 1940.
+
+-dis: weighted mean of distances to five Boston employment centres.
+
+-rad: index of accessibility to radial highways.
+
+-tax: full-value property-tax rate per \$10,000.
+
+-ptratio: pupil-teacher ratio by town.
+
+-black: 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+
+-lstat: lower status of the population (percent).
+
+-medv: median value of owner-occupied homes in \$1000s.
+
+
+
+```{r}
+# load the data from MASS package
+data("Boston")
+## check how the data look like (structure and dimension etc.)
+glimpse(Boston)
+```
+
+
+To explore variables and their relationship further, I created plots about their distributions and correlations.
+
+
+```{r,fig.height=10,fig.width=10}
+# Plots 
+p <- ggpairs(Boston, mapping = aes(alpha = 0.5), lower = list(combo = wrap("facethist", bins = 20)))
+p1 <- p + ggtitle("Housing values in suburbs of Boston")
+p1
+```
+Figure 1. Boston data variable 
+
+```{r,fig.height=6,fig.width=10}
+# correlation plot
+cor_matrix<-cor(Boston) %>% round(2)
+corrplot(cor_matrix, method="circle", type="upper", cl.pos="b", tl.pos="d",tl.cex=0.6)
+```
+Figure 2. Correlations
+
+From distribution plots in Figure 1, it can be seen that almost all variables do not follow normal distribution. Only one variable, average numbers of rooms per dvelling (rm), seems to follow normal distribution. Other variables are either right skewed (crim, zn, chas, nox,dis, lstat and medv), left skewed (age, ptratio, and black) or clearly bimodal (indus, rad and tax). Also there seems to strong correlation between many of the variables. Correlations are plotted also in the Figure 2, where red indicates negative correlation and blue positive correlation and the size and color density how strong the correlation is. Darker and bigger indicates stronger correlation than small and light. For example, between lower status of the population (lstat) and median value of owner-occupied homes in $1000s (medv), has strong negative correlation. Whereas, between index of accessibility to radial highways (rad) and full-value property-tax rate per $10000 (tax) there is strong positive correlation. Whether these observations are statistically significant, can be confirmed by statistical tests. 
+
+
+```{r}
+## summary of the data
+summary(Boston)
+```
+
+Skewnes of the variables can also been observed in the summary statistics (above). In crim, interval between min 0.00632 and max 88,97 is wide, but median is only 0.256. Results are difficult to interpret because of the scale used, so the data should be standardized to make it easier (below). Now the results are comparable with each other and easier to interpret.
+
+```{r}
+# standardize data and print out the summary
+boston_scaled <- as.data.frame(scale(Boston))
+summary(boston_scaled)
+#names(boston_scaled)
+```
+
+
+### Linear Discrimant Analysis (LDA)
+
+Linear discrimant analysis (LDA) is a classification method that can be used to find those variables that best separate classes, to class prediction of new data and for dimensional reduction. Target variable can be either binary or multiclass variable. LDA assumes that variables follow normal distribution and each class share same covariance matrix. To perform  with the target variable crime, data is divided into train and test.
+
+```{r}
+#create a categorical variable
+scaled_crim <- boston_scaled$crim
+
+# summary of the scaled_crim
+summary(scaled_crim)
+
+# create a quantile vector of crim and print it
+bins <- quantile(scaled_crim)
+
+
+# create a categorical variable 'crime'
+crime <- cut(scaled_crim, breaks = bins, include.lowest = TRUE, labels = c("low", "med_low", "med_high", "high"))
+# remove original crim from the dataset
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+# add the new categorical value to scaled data
+boston_scaled <- data.frame(boston_scaled, crime)
+# Divide dataset to test and train sets
+n <- nrow(boston_scaled)
+# choose randomly 80% of the rows
+ind <- sample(n,  size = n * 0.8)
+#  train set
+train <- boston_scaled[ind,]
+# and test set 
+test <- boston_scaled[-ind,]
+
+# linear discriminant analysis on the train set 
+lda.fit <- lda(crime ~., data = train)
+lda.fit
+
+# Plot
+# the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+# target classes as numeric
+classes <- as.numeric(train$crime)
+# plot the lda results
+plot(lda.fit, dimen = 2, col=classes, pch=classes, main="LDA")
+lda.arrows(lda.fit, myscale = 2)
+```
+
+Figure 3. LDA
+
+
+
+Figure 3 represents the LDA results, in which different colors represent different classes and the arrows show the impact of each predictor variables. Accessibility to radial highways seems to be strongly associated with high crime rates.
+
+Classes can be predicted from the LDA model by using test data and this infromation can be used to test the performance of the model. Correct values are crosstabulated against predicted values.
+
+
+```{r}
+# save test crime
+correct_classes <- test$crime
+## test set for prediction
+test <- dplyr::select(test, -crime) 
+# predict classes with test data
+lda.pred <- predict(lda.fit, newdata = test)
+
+# and cross tabulate the results
+table(correct = correct_classes, predicted = lda.pred$class) 
+```
+
+
+Model performs well with high class, all predictions are correct. Prediction of low is correct 16 times but predicted 2 times to be medium low. Medium low is predicted to be correct 15 times and wrong 14 times, so model performs weakly with then medium low values. Medium high is predicted to be correct 20 times and incorrect 4 times. Model thus performs well with all other except medium low.
+
+
+### Distance and K-means clustering
+ 
+K-means is a method for clustering which uses the similarity of the objects to grouping or clustering. Number of clusters that best fit for the data can be determined for example by looking at how the total of within cluster sum of squares (WCSS) behaves when the number of cluster changes. Optimal number can be seen from figure 4 from the point where WCSS drops radically. This happens when there are 2 clusters.
+
+
+```{r}
+data("Boston")
+#scale
+boston_scaled <- as.data.frame(scale(Boston))
+# euclidean distance matrix
+dist_eu <- dist(boston_scaled)
+# look at the summary of the distances
+summary(dist_eu)
+k_max <- 10
+# calculate the total within sum of squares
+twcss <- sapply(1:k_max, function(k){kmeans(dist_eu, k)$tot.withinss})
+# visualize the results to find optimal number of clusters
+plot(1:k_max, twcss, type='b')
+```
+
+Figure 4. K-means clustering
+
+```{r,fig.height=10,fig.width=10}
+# Plot 
+# k-means clustering
+km <-kmeans(dist_eu, centers = 2)
+# plot the Boston dataset with clusters
+pairs(Boston, col = km$cluster)
+```
+
+Figure 5. Variables by two cluster
+
+In Figure 5, scaled variables are presented by the cluster. The difference between the clusters can be seen in almost all pictures. There is clear difference for example crime and accessibility to radial highways which was seen also in the LDA plot. 
+
+
+
+

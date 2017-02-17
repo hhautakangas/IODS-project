@@ -17,7 +17,7 @@ Dataset LEARN includes 166 observations and 7 variables. Variables are gender, A
 
 ```{r }
 # read data
-setwd("~/Documents/IODS-project")
+ 
 LEARN <- read.table("data/learning2014sub.txt", as.is=TRUE, header=TRUE)
 
 # attach the data so there is no need to refer to the dataset used
