@@ -31,10 +31,6 @@ names(gii)[8]<-"SecEduM"
 names(gii)[9]<-"LabourPartF"
 names(gii)[10]<-"LabourPartM"
 
-#he first one should be the ratio of Female and Male populations with secondary education in each country.
-#(i.e. edu2F / edu2M). 
-#The second new variable should be the ratio of labour force participation of females and males in each country 
-#(i.e. labF / labM). 
 # Mutate new variables 
 # the ratio of Female and Male populations with secondary education
 gii <- mutate(gii, edu2_ratio = (SecEduF/SecEduM))
