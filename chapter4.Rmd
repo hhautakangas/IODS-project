@@ -98,9 +98,9 @@ summary(boston_scaled)
 ```
 
 
-### Linear Discrimant Analysis (LDA)
+### Linear Discriminant Analysis (LDA)
 
-Linear discrimant analysis (LDA) is a classification method that can be used to find those variables that best separate classes, to class prediction of new data and for dimensional reduction. Target variable can be either binary or multiclass variable. LDA assumes that variables follow normal distribution and each class share same covariance matrix. To perform  with the target variable crime, data is divided into train and test.
+Linear discriminant analysis (LDA) is a classification method that can be used to find those variables that best separate classes, to class prediction of new data and for dimensional reduction. Target variable can be either binary or multiclass variable. LDA assumes that variables follow normal distribution and each class share same covariance matrix. To perform  with the target variable crime, data is divided into train and test.
 
 ```{r}
 #create a categorical variable
