@@ -56,6 +56,11 @@ BOTH <- inner_join(hd, gii, by = "Country", suffix=c(".hd",".gii"))
 head(BOTH)
 write.table(BOTH,"data/human.txt", quote=FALSE, row.names=FALSE)
 
+
+
+
+
+
 ## DATA WRANGLING week 5
 
 #rename data
