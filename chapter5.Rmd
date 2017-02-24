@@ -1,0 +1,195 @@
+
+---
+title: Week 5
+author: Heidi Hautakangas
+output: html_document
+---
+
+# WEEK 5
+
+## ANALYSIS
+
+
+HUMAN data set contains 8 variables and 155 observations, each observation representing one country. Original Human data is collected for calculating Human Development index, which is a summary measure, a geometric mean of normalized indices for achievements in three dimensions of human development, which are a long and healthy life, access to knowledge and a decent standard of living. More information can be found: 
+
+http://hdr.undp.org/en/content/human-development-index-hdi
+
+Short description of the variables:
+
+* Health and knowledge
+
+ -"GNI" = Gross National Income per capita
+ 
+ -"Life.Exp" = Life expectancy at birth
+ 
+ -"Edu.Exp" = Expected years of schooling 
+ 
+ -"Mat.Mor" = Maternal mortality ratio
+ 
+ -"Ado.Birth" = Adolescent birth rate
+
+* Empowerment
+
+-"Parli.F" = Percentage of female representatives in parliament
+
+-"Edu2.FM" = ratio between the proportion of females and males with at least secondary education
+
+-"Labo.FM" = ratio between the proportion of females and males in the labour force
+
+
+```{r echo=F, warning=F, message=F}
+setwd("~/Documents/IODS-project")
+library(FactoMineR)
+library(dplyr)
+library(ggplot2)
+library(MASS)
+library(GGally)
+library(tidyr)
+library(corrplot)
+
+```
+
+
+```{r}
+# read mutated HUMAN data into R
+HUMAN <- read.table("data/human.txt", as.is=T, header=T)
+# structure, dimension and summary
+str(HUMAN)
+dim(HUMAN)
+summary(HUMAN)
+```
+
+Data summary shows that there are very diverse scales between variables, so standardizing the data set would be useful for many analysis. 
+
+```{r ,fig.height=10,fig.width=10}
+# Plots 
+# function for regression lines
+my_fn <- function(data, mapping, ...){
+  p <- ggplot(data = data, mapping = mapping) + 
+    geom_point() + 
+    geom_smooth(method=lm, fill="blue", color="blue", ...)
+  p
+}
+
+g = ggpairs(HUMAN,columns = 1:8, lower = list(continuous = my_fn))
+p1 <- g + ggtitle("HUMAN") 
+p1
+
+```
+
+Figure 1. Human data 
+
+Figure 1 shows that most of the variables are skewed: ratio between the proportion of females and males with at least secondary education (Edu2.FM), ratio between the proportion of females and males in the labour force (Labo.FM), and life expectancy at birth (Life.exp) are clearly left skewed and Gross National Income per capita (GNI), maternal mortality ratio (Mat.Mor), adolescent birth rate (Ado.Birth) and percentage of female representatives in parliament (Parli.F) right skewed. Only expected years of schooling (Edu.Exp) seems to follow normal distribution. There seems to be strong positive correlation between expected years of schooling and life expectancy at birth, and also between GNI and both expected years of schooling and life expectancy at birth. There is strong negative correlation between maternal mortality ratio and the ratio between the proportion of females and males with at least secondary education, as well as between life expectancy at birth and maternal mortality ratio. These can be observed also from the correlation plot below (Figure 2.)
+
+```{r,fig.height=6,fig.width=10}
+# correlation plot
+cor_matrix<-cor(HUMAN) %>% round(2)
+corrplot(cor_matrix, method="circle", type="upper", cl.pos="b", tl.pos="d",tl.cex=0.6)
+```
+
+Figure 2. Correlation plot
+
+
+
+### Principal Component Analysis (PCA)
+
+Principal component analysis is a dimension reduction technique which aims to find those components from the data that describes the data best without losing any important information. First principal component captures most of the variance, and then second principal component most of the remaining variance and it is orthogonal to the first PC. Each principal component are uncorrelated.
+
+At first, PCA is performed for unstandardized dataset. Results can be seen below. In this case, because the data is unstandardized, first principal component captures all the variation because there are so much differences between the scales of the variables. PC2 contains only 0.0001 from the variance. Figure 3 shows how most of the observations are located in the upper right corner. This is not very informative analysis, so next the variables are standardized and PCA repeated.
+
+```{r, fig.height=10,fig.width=10}
+# PC 1
+pca_hum1 <- prcomp(HUMAN)
+pca_hum1
+# summary of the results
+pca_hum1b <- summary(pca_hum1)
+pca_hum1b
+# rounded percetanges of variance captured by each PC
+pca_pr <- round(100*pca_hum1b$importance[2, ], digits = 1)
+pca_pr
+```
+
+```{r, fig.height=10,fig.width=10,  warning=F, message=F}
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+#  biplot
+biplot(pca_hum1, cex = c(0.8, 1), col = c("grey40", "green"), xlab = pc_lab[1], ylab =pc_lab[2], main="Un-standardized PCA")
+```
+Figure 3. Un-standardized PCA. 
+
+
+```{r fig.height=10,fig.width=10}
+# Scaling data
+scal_hum <- scale(HUMAN)
+#PCA 2
+pca_hum2 <- prcomp(scal_hum)
+pca_hum2b <- summary(pca_hum2)
+#pca_hum2
+pca_hum2b
+# rounded percetanges of variance captured by each PC
+pca_pr2 <- round(100*pca_hum2b$importance[2, ], digits = 1)
+# print out the percentages of variance
+pca_pr2
+```
+There is a great difference between the results of PCA with unstandardized and standardized data. After standardization, first two principal components captures 69.8% of the variance, first one capturinng 53.6% and second one 16.2%.  Results are best described by biplot (Figure 4). First dimension contains two differing group of variables that are in opposite directions: maternal mortality ratio (Mat.mor) and adolescent birth rate (Ado.Birth) forming one group that describes health, and ratio between the proportion of females and males with at least secondary education (Edu2.FM), expected years of schooling (Edu.exp), life expectancy at birth (Life.exp) and gross National Income per capita (GNI) forming other group describing knowledge and wealth. Variables in second dimension are uncorrelated from the ones in first dimension and second dimension contains one group consisting of ratio between the proportion of females and males in the labour force (Labo.FM) and percentage of female representatives in parliament (Parli.F) describing empowerment. Length of the arrows describes standard deviation and the angle between arrows the correlation, small angle indicating high positive correlation. In each group, variables are highly correlated with each other.
+
+```{r fig.height=10,fig.width=10}
+# create object pc_lab to be used as axis labels
+pc_lab2 <- paste0(names(pca_pr2), " (", pca_pr2, "%)")
+# draw a biplot
+biplot(pca_hum2, cex = c(0.8, 1), col = c("grey40", "green"), xlab = pc_lab2[1], ylab =pc_lab2[2], main="Standardized PCA")
+```
+Figure 4.  First two principal component dividing the dataset into three differing groups: empowerment (PC2) is uncorrelated from the groups representing health and knowledge (PC2) 
+
+
+### TEA dataset 
+
+Tea dataset contains 36 variables and 300 observations about individuals?? habits of drinking tea and some personal background information. Figure 5. describes the dataset visually. All other variables are categorial expect quantative age variable. There can be seen clear differences between categories in many variables: for example most of the individuals drink tea at home and only few somewhere else, and only few people drink tea during lunch.
+
+```{r , fig.height=10,fig.width=10}
+# explore dim and structure
+data(tea)
+str(tea)
+dim(tea)
+```
+
+```{r , fig.height=10,fig.width=10, warning=F, message=F}
+# visualize the dataset
+gather(tea) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 5))
+```
+Figure 5. Description of Tea variables
+
+### Multiple Correspondence Analysis (MCA)
+
+Multiple Correspondence Analysis (MCA) is another dimension reduction technique that can be used to analyse the patterns of several for categorial variables. I chose following variables for further analysis: 
+
+-Tea: most used type of tea (black, green, earl grey)
+
+-tea.time: does the individual have a specific tea time or not 
+
+-How: how he/she prefers to drink the tea (alone, with milk, lemon or other)
+
+-sex: gender
+
+
+```{r , fig.height=10,fig.width=10}
+# column names to keep in the dataset
+keep_columns <- c("Tea", "tea.time", "How", "sex")
+# select the 'keep_columns' to create a new dataset
+tea2 <- subset(tea, select= keep_columns)
+# multiple correspondence analysis
+mca <- MCA(tea2, graph = FALSE)
+# summary of the model
+summary(mca)
+```
+
+About 50 % of the variation is captured by first three dimensions, firs one capturing 19.4% of the variance, second one 17.4% and third one 15.0% of the variance. Individuals table shows the contribution of first 10 individuals and categories table the contribution of first 10 categories on the dimension and squared correlation of the dimension. Last table, categorial variables shows the squared correlations between the variables and dimensions. Tea time has strong squared correlation to first dimension (0.58) but practically non to dimensions two and three. Type of tea has strong squarred correlation to dimension two (0.601) and modest squared correlation to both dimensions one (0.206) and three (0.247). Preferation to how to drink the tea has strong squared correlation with dimensions three (0.746) and dim 2 (0.525), but negligible correlation with dimension one. Gender has strong squared correlation with dimension one and neglilible to dimensions two and three. First two dimensions are illustrated also in Figure 6. Other type of tea differs from rest of the categories, whereas plain tea (alone) and Earl Grey are similar.
+  
+ 
+```{r , fig.height=10,fig.width=10}
+# visualize MCA
+plot(mca, invisible=c("ind"), habillage ="quali")
+
+```
+
+Figure 6. MCA

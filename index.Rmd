@@ -17,10 +17,6 @@ output:
 ```{r child = "chapter1.Rmd"}
 ```
   
-***
-
-```{r child = "Chapter2a.Rmd"}
-```
 
 ***  
 ```{r child = "chapter2.Rmd"}
@@ -34,6 +30,11 @@ output:
 ***
 
 ```{r child = "chapter4.Rmd"}
+```
+
+***
+
+```{r child = "chapter5.Rmd"}
 ```
 
 ***
